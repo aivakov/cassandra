@@ -59,7 +59,7 @@ public class TimeWindowCompactionStrategy extends AbstractCompactionStrategy
         super(cfs, options);
         this.estimatedRemainingTasks = 0;
         this.options = new TimeWindowCompactionStrategyOptions(options);
-        if (!options.containsKey(AbstractCompactionStrategy.TOMBSTONE_COMPACTION_INTERVAL_OPTION) && !options.containsKey(AbstractCompactionStrategy.TOMBSTONE_THRESHOLD_OPTION))
+        if (!options.containsKey(AbstractCompactionStrategy.UNCHECKED_TOMBSTONE_COMPACTION_OPTION) || options.get(AbstractCompactionStrategy.UNCHECKED_TOMBSTONE_COMPACTION_OPTION).equals("false"))
         {
             disableTombstoneCompactions = true;
             logger.debug("Disabling tombstone compactions for TWCS");
