@@ -33,6 +33,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 import org.apache.cassandra.SchemaLoader;
@@ -118,6 +119,15 @@ public class TimeWindowCompactionStrategyTest extends SchemaLoader
         {
             options.put(TimeWindowCompactionStrategyOptions.UNSAFE_AGGRESSIVE_SSTABLE_EXPIRATION_KEY, "true");
         }
+        
+        options.put(AbstractCompactionStrategy.UNCHECKED_TOMBSTONE_COMPACTION_OPTION, "true");
+        Keyspace keyspace = Keyspace.open(KEYSPACE1);
+        ColumnFamilyStore cfs = keyspace.getColumnFamilyStore(CF_STANDARD1);
+        TimeWindowCompactionStrategy twcs = new TimeWindowCompactionStrategy(cfs, options);
+        assertFalse(twcs.disableTombstoneCompactions);
+        options.put(AbstractCompactionStrategy.UNCHECKED_TOMBSTONE_COMPACTION_OPTION, "false");
+        twcs = new TimeWindowCompactionStrategy(cfs, options);
+        assertTrue(twcs.disableTombstoneCompactions);
 
         options.put("bad_option", "1.0");
         unvalidated = validateOptions(options);
