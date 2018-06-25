@@ -250,8 +250,13 @@ public class CreateViewStatement extends SchemaAlteringStatement
 
         // This is only used as an intermediate state; this is to catch whether multiple non-PK columns are used
         boolean hasNonPKColumn = false;
+        boolean allPartKeysInBaseKeys = true;
         for (ColumnDefinition.Raw raw : partitionKeys)
+        {
             hasNonPKColumn |= getColumnIdentifier(cfm, basePrimaryKeyCols, hasNonPKColumn, raw, targetPartitionKeys, restrictions);
+            if(allPartKeysInBaseKeys)
+                allPartKeysInBaseKeys =  basePrimaryKeyCols.contains(raw.getIdentifier(cfm));
+        }
 
         for (ColumnDefinition.Raw raw : clusteringKeys)
             hasNonPKColumn |= getColumnIdentifier(cfm, basePrimaryKeyCols, hasNonPKColumn, raw, targetClusteringColumns, restrictions);
@@ -299,7 +304,7 @@ public class CreateViewStatement extends SchemaAlteringStatement
         if (targetPartitionKeys.isEmpty())
             throw new InvalidRequestException("Must select at least a column for a Materialized View");
 
-        if (targetClusteringColumns.isEmpty())
+        if (targetClusteringColumns.isEmpty() && !cfm.clusteringColumns().isEmpty() && !allPartKeysInBaseKeys)
             throw new InvalidRequestException("No columns are defined for Materialized View other than primary key");
 
         TableParams params = properties.properties.asNewTableParams();
