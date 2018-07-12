@@ -453,6 +453,63 @@ public class SSTableReaderTest
     }
 
     @Test
+    public void testRegenerateBloomFilterAndSummary() throws Exception {
+        String ks = KEYSPACE1;
+        String cf = "Standard1";
+
+        // clear and create just one sstable for this test
+        Keyspace keyspace = Keyspace.open(ks);
+        ColumnFamilyStore store = keyspace.getColumnFamilyStore(cf);
+        store.clearUnsafe();
+        store.disableAutoCompaction();
+
+        DecoratedKey firstKey = null, lastKey = null;
+        long timestamp = System.currentTimeMillis();
+        for (int i = 0; i < store.metadata().params.minIndexInterval; i++)
+        {
+            DecoratedKey key = Util.dk(String.valueOf(i));
+            if (firstKey == null)
+                firstKey = key;
+            if (lastKey == null)
+                lastKey = key;
+            if (store.metadata().partitionKeyType.compare(lastKey.getKey(), key.getKey()) < 0)
+                lastKey = key;
+
+
+            new RowUpdateBuilder(store.metadata(), timestamp, key.getKey())
+            .clustering("col")
+            .add("val", ByteBufferUtil.EMPTY_BYTE_BUFFER)
+            .build()
+            .applyUnsafe();
+        }
+        store.forceBlockingFlush();
+
+        SSTableReader sstable = store.getLiveSSTables().iterator().next();
+        Descriptor desc = sstable.descriptor;
+
+        // test to see if sstable can be opened as expected
+        SSTableReader target = SSTableReader.open(desc);
+
+        File summaryFile = new File(desc.filenameFor(Component.SUMMARY));
+        Path bloomPath = new File(desc.filenameFor(Component.FILTER)).toPath();
+        Path summaryPath = summaryFile.toPath();
+
+        long bloomModified = Files.getLastModifiedTime(bloomPath).toMillis();
+        TimeUnit.MILLISECONDS.sleep(1000); // sleep to ensure modified time will be different
+
+        target.saveBloomFilter();
+
+        assertTrue(Files.getLastModifiedTime(bloomPath).toMillis() > bloomModified);
+
+        long summaryModified = Files.getLastModifiedTime(summaryPath).toMillis();
+        TimeUnit.MILLISECONDS.sleep(1000); // sleep to ensure modified time will be different
+
+        target.saveSummary();
+
+        assertTrue(Files.getLastModifiedTime(summaryPath).toMillis() > summaryModified);
+    }
+
+    @Test
     public void testLoadingSummaryUsesCorrectPartitioner() throws Exception
     {
         Keyspace keyspace = Keyspace.open(KEYSPACE1);
