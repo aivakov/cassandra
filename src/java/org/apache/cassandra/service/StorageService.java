@@ -78,7 +78,10 @@ import org.apache.cassandra.exceptions.*;
 import org.apache.cassandra.gms.*;
 import org.apache.cassandra.hints.HintVerbHandler;
 import org.apache.cassandra.hints.HintsService;
+import org.apache.cassandra.io.sstable.Component;
+import org.apache.cassandra.io.sstable.SSTable;
 import org.apache.cassandra.io.sstable.SSTableLoader;
+import org.apache.cassandra.io.sstable.format.SSTableReader;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.locator.*;
 import org.apache.cassandra.metrics.StorageMetrics;
@@ -3264,6 +3267,38 @@ public class StorageService extends NotificationBroadcasterSupport implements IE
                 status = oneStatus;
         }
         return status.statusCode;
+    }
+
+    @Override
+    public void recreateSSTableComponents(int jobs, String keyspaceName, Collection<Component.Type> components, String ... columnFamilies) throws IOException, ExecutionException, InterruptedException
+    {
+        if(components.contains(Component.Type.PRIMARY_INDEX) || components.contains(Component.Type.COMPRESSION_INFO) || components.contains(Component.Type.SECONDARY_INDEX) || components.contains(Component.Type.STATS))
+        {
+            upgradeSSTables(keyspaceName, false, columnFamilies);
+            return;
+        }
+
+        for (ColumnFamilyStore cfs : getValidColumnFamilies(false, false, keyspaceName, columnFamilies))
+        {
+
+            Iterator<SSTableReader> sstables =  cfs.getLiveSSTables().iterator();
+
+            while(sstables.hasNext()){
+
+                SSTableReader table = sstables.next();
+
+                if(components.contains(Component.Type.SUMMARY)){
+                    table.rebuildSummary();
+                }
+                if(components.contains(Component.Type.FILTER)){
+                    table.saveBloomFilter();
+                }
+                if(components.contains(Component.Type.TOC)){
+                    table.rewriteTOC();
+                }
+            }
+
+        }
     }
 
     public int garbageCollect(String tombstoneOptionString, int jobs, String keyspaceName, String ... columnFamilies) throws IOException, ExecutionException, InterruptedException

@@ -30,6 +30,7 @@ import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMISocketFactory;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -66,6 +67,7 @@ import org.apache.cassandra.gms.FailureDetectorMBean;
 import org.apache.cassandra.gms.Gossiper;
 import org.apache.cassandra.gms.GossiperMBean;
 import org.apache.cassandra.db.HintedHandOffManager;
+import org.apache.cassandra.io.sstable.Component;
 import org.apache.cassandra.locator.DynamicEndpointSnitchMBean;
 import org.apache.cassandra.locator.EndpointSnitchInfoMBean;
 import org.apache.cassandra.metrics.CassandraMetricsRegistry;
@@ -376,6 +378,11 @@ public class NodeProbe implements AutoCloseable
     public void relocateSSTables(int jobs, String keyspace, String[] cfnames) throws IOException, ExecutionException, InterruptedException
     {
         ssProxy.relocateSSTables(jobs, keyspace, cfnames);
+    }
+
+    public void recreateSSTableComponents(int jobs, String keyspace, String[] cfnames, Collection<Component.Type> components) throws IOException, ExecutionException, InterruptedException
+    {
+        ssProxy.recreateSSTableComponents(jobs, keyspace, components, cfnames);
     }
 
     public void forceKeyspaceCompactionForTokenRange(String keyspaceName, final String startToken, final String endToken, String... tableNames) throws IOException, ExecutionException, InterruptedException

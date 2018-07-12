@@ -156,6 +156,7 @@ public class NodeTool
                 FailureDetectorInfo.class,
                 RefreshSizeEstimates.class,
                 RelocateSSTables.class,
+                RecreateSSTableComponents.class,
                 ViewBuildStatus.class,
                 HandoffWindow.class,
                 ReloadSslCertificates.class,

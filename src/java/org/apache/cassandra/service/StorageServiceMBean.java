@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -33,6 +34,7 @@ import javax.management.openmbean.TabularData;
 
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.apache.cassandra.exceptions.ConfigurationException;
+import org.apache.cassandra.io.sstable.Component;
 import org.apache.cassandra.metrics.TableMetrics.Sampler;
 
 public interface StorageServiceMBean extends NotificationEmitter
@@ -279,6 +281,9 @@ public interface StorageServiceMBean extends NotificationEmitter
     @Deprecated
     public int relocateSSTables(String keyspace, String ... cfnames) throws IOException, ExecutionException, InterruptedException;
     public int relocateSSTables(int jobs, String keyspace, String ... cfnames) throws IOException, ExecutionException, InterruptedException;
+
+    public void recreateSSTableComponents(int jobs, String keyspace, Collection<Component.Type> components, String ... cfnames) throws IOException, ExecutionException, InterruptedException;
+
     /**
      * Forces major compaction of specified token range in a single keyspace
      */

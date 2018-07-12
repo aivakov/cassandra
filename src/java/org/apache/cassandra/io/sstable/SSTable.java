@@ -315,14 +315,19 @@ public abstract class SSTable
         }
         return components;
     }
-
-    /**
-     * Appends new component names to the TOC component.
-     */
+    
     protected static void appendTOC(Descriptor descriptor, Collection<Component> components)
     {
+        appendTOC(descriptor, components, false);
+    }
+
+    /**
+     * Appends new component names to the TOC component. Will rewrite the TOC file if rewrite is true.
+     */
+    protected static void appendTOC(Descriptor descriptor, Collection<Component> components, boolean rewrite)
+    {
         File tocFile = new File(descriptor.filenameFor(Component.TOC));
-        try (PrintWriter w = new PrintWriter(new FileWriter(tocFile, true)))
+        try (PrintWriter w = new PrintWriter(new FileWriter(tocFile, !rewrite)))
         {
             for (Component component : components)
                 w.println(component.name);

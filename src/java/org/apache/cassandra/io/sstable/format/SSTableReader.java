@@ -878,6 +878,22 @@ public abstract class SSTableReader extends SSTable implements SelfRefCounted<SS
         last = getMinimalKey(last);
     }
 
+    public void rebuildSummary(){
+        try
+        {
+            buildSummary(true, false, this.getIndexSummarySamplingLevel());
+            saveSummary();
+        }
+        catch (IOException e) {
+
+        }
+    }
+
+    public void rewriteTOC(){
+        Collection<Component> components = SSTableReader.discoverComponentsFor(descriptor);
+        SSTableReader.appendTOC(descriptor, components, true);
+    }
+
     /**
      * Load index summary from Summary.db file if it exists.
      *
