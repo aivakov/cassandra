@@ -65,23 +65,22 @@ public class RecreateSSTableComponents extends NodeTool.NodeToolCmd
 
     @Option(title = "compression",
     name = {"-c", "--compression"},
-    description = "Rebuild the compression info")
+    description = "Rebuild the compression info (will trigger upgradesstables and execute a compaction)")
     private boolean compression = false;
 
     @Option(title = "statistics",
     name = {"-t", "--statistics"},
-    description = "Rebuild the statistics")
+    description = "Rebuild the statistics (will trigger upgradesstables and execute a compaction)")
     private boolean statistics = false;
 
     @Option(title = "contents",
-    name = {"-c", "--contents"},
+    name = {"-n", "--contents"},
     description = "Rebuild the table of contents")
     private boolean contents = false;
 
     @Override
     public void execute(NodeProbe probe)
     {
-        System.out.println(components);
         if(all){
             components = Arrays.asList(Component.Type.class.getEnumConstants());
         } else
