@@ -885,7 +885,7 @@ public abstract class SSTableReader extends SSTable implements SelfRefCounted<SS
             saveSummary();
         }
         catch (IOException e) {
-
+            logger.trace("Could not rebuild SSTable Summary File {}: {}", new File(descriptor.filenameFor(Component.SUMMARY)).getPath(), e.getMessage());
         }
     }
 

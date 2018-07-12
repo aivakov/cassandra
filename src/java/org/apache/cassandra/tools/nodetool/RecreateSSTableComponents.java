@@ -126,7 +126,7 @@ public class RecreateSSTableComponents extends NodeTool.NodeToolCmd
         }
         catch (Exception e)
         {
-            throw new RuntimeException("Got error while relocating", e);
+            throw new RuntimeException("Got error while recreating table components", e);
         }
     }
 }
