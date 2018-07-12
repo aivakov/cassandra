@@ -18,10 +18,13 @@
 package org.apache.cassandra.io.sstable;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
 import java.util.*;
 import java.util.concurrent.*;
@@ -61,6 +64,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(OrderedJUnit4ClassRunner.class)
 public class SSTableReaderTest
@@ -490,6 +494,11 @@ public class SSTableReaderTest
         // test to see if sstable can be opened as expected
         SSTableReader target = SSTableReader.open(desc);
 
+        // Overwrite bloom filter file with garbage
+        Writer writer = new FileWriter(sstable.descriptor.filenameFor(Component.FILTER), false);
+        writer.write("garbage");
+        writer.close();
+
         File summaryFile = new File(desc.filenameFor(Component.SUMMARY));
         Path bloomPath = new File(desc.filenameFor(Component.FILTER)).toPath();
         Path summaryPath = summaryFile.toPath();
@@ -497,9 +506,20 @@ public class SSTableReaderTest
         long bloomModified = Files.getLastModifiedTime(bloomPath).toMillis();
         TimeUnit.MILLISECONDS.sleep(1000); // sleep to ensure modified time will be different
 
-        target.saveBloomFilter();
+        target.saveBloomFilter(); //rewrite the bloom filter
 
+        //check the file has been written to
         assertTrue(Files.getLastModifiedTime(bloomPath).toMillis() > bloomModified);
+
+        target.selfRef().release();
+
+        //try opening the sstable. Will not open if bloom filter file still contains garbage
+        try
+        {
+            target = SSTableReader.open(desc);
+        } catch (CorruptSSTableException e){
+            fail("Bloom filter file has not been re-written correctly.");
+        }
 
         long summaryModified = Files.getLastModifiedTime(summaryPath).toMillis();
         TimeUnit.MILLISECONDS.sleep(1000); // sleep to ensure modified time will be different
@@ -507,6 +527,14 @@ public class SSTableReaderTest
         target.saveSummary();
 
         assertTrue(Files.getLastModifiedTime(summaryPath).toMillis() > summaryModified);
+
+        Path tocPath = new File(desc.filenameFor(Component.TOC)).toPath();
+        long tocModified = Files.getLastModifiedTime(bloomPath).toMillis();
+        TimeUnit.MILLISECONDS.sleep(1000); // sleep to ensure modified time will be different
+
+        target.rewriteTOC();
+
+        assertTrue(Files.getLastModifiedTime(tocPath).toMillis() > tocModified);
     }
 
     @Test
